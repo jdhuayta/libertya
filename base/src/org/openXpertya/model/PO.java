@@ -2754,7 +2754,7 @@ public abstract class PO implements Serializable, Comparator, Evaluatee {
 				m_IDs[0]);
 
 		// The Delete Statement
-		StringBuffer sql = new StringBuffer("DELETE ").append(
+		StringBuffer sql = new StringBuffer("DELETE FROM ").append(
 				p_info.getTableName()).append(" WHERE ").append(
 				get_WhereClause(false));
 		//
