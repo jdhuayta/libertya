@@ -1,8 +1,10 @@
 package org.openXpertya.process;
 
 import java.math.BigDecimal;
+import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.logging.Level;
@@ -12,6 +14,7 @@ import org.openXpertya.model.X_C_BPartner_Padron_BsAs;
 import org.openXpertya.util.CPreparedStatement;
 import org.openXpertya.util.DB;
 import org.openXpertya.util.Env;
+import org.openXpertya.util.Trx;
 import org.openXpertya.util.Util;
 
 
@@ -28,6 +31,7 @@ public class ImportPadronBsAsFromCopy extends SvrProcess {
 	private static final String MANTENIMIENTO_PADRON = "MantenimientoPadron";
 	
 	private int p_AD_Org_ID = 0;
+	private int p_ChunkSize = 50000;	
 	private String p_NameCsvFile = null;
 	private String p_PadronType = null;
 	private int ad_Client_ID = 0;
@@ -59,6 +63,8 @@ public class ImportPadronBsAsFromCopy extends SvrProcess {
                 p_NameCsvFile = ( String )para[ i ].getParameter();
             } else if( name.equals( "PadronType" )) {
                 p_PadronType = ( String )para[ i ].getParameter();
+            } else if( name.equals( "ChunkSize" )) {
+                p_ChunkSize = (( BigDecimal )para[ i ].getParameter()).intValue();
             } else {
                 log.log( Level.SEVERE,"Unknown Parameter: " + name );
             }
@@ -76,15 +82,21 @@ public class ImportPadronBsAsFromCopy extends SvrProcess {
 		DB.executeUpdate(sql.toString());
 		
 		/** Se copia el contenido del padrón a la tabla i_padron_sujeto_aux */
+		long time  = System.currentTimeMillis();
 		sql = new StringBuffer();
 		sql.append("COPY i_padron_sujeto_aux_new FROM '"+ getPath() + p_NameCsvFile + "' WITH DELIMITER '" + getSeparatorCharacterCSV() + "'");
 		DB.executeUpdate(sql.toString());
+		time = System.currentTimeMillis() - time;
+		log.info("Se importó el archivo " + p_NameCsvFile + " en " + time + " ms");
 		
 		/** Se ejecuta el proceso de mantenimiento de padrón eliminando aquellos padrones que ya no se usan */
 		regDeleted = maintainPadronTable();
 		
 		/** Se insertan los registros a la tabla c_bpartner_padron_bsas */
-		insert();
+		time  = System.currentTimeMillis();		
+		actualizarPadron();
+		time = System.currentTimeMillis() - time;
+		log.info("Se actualizó el padrón en " + time + " ms");
 		
 		/** Se actualiza el campo c_bpartner_id de la tabla c_bpartner_padron_bsas*/
 		updateCBPartner();
@@ -180,65 +192,74 @@ public class ImportPadronBsAsFromCopy extends SvrProcess {
 	}
 	
 	/**
-	 * Insertar registros desde la tabla i_padron_sujeto_aux a la
+	 * Copia registros desde la tabla i_padron_sujeto_aux a la
 	 * tabla c_bpartner_padron_bsas
 	 * 
 	 * @throws Exception
 	 */
-	protected void insert(){
-		sql = new StringBuffer();
-		sql.append("INSERT \n");
-		sql.append("INTO   c_bpartner_padron_bsas \n");
-		sql.append("       ( \n");
-		sql.append(" c_bpartner_padron_bsas_ID, \n");
-		sql.append(" FECHA_PUBLICACION        , \n");
-		sql.append(" FECHA_DESDE              , \n");
-		sql.append(" FECHA_HASTA              , \n");
-		sql.append(" CUIT                     , \n");
-		sql.append(" TIPO_CONTR_INSC          , \n");
-		sql.append(" ALTA_BAJA                , \n");
-		sql.append(" CBIO_ALICUOTA            , \n");
-		sql.append(" PERCEPCION               , \n");
-		sql.append(" RETENCION                , \n");
-		sql.append(" NRO_GRUPO_RET            , \n");
-		sql.append(" NRO_GRUPO_PER            , \n");
-		sql.append(" AD_CLIENT_ID             , \n");
-		sql.append(" AD_ORG_ID                , \n");
-		sql.append(" ISACTIVE                 , \n");
-		sql.append(" CREATED                  , \n");
-		sql.append(" UPDATED                  , \n");
-		sql.append(" CREATEDBY                , \n");
-		sql.append(" UPDATEDBY                , \n");
-		sql.append(" padrontype                 \n");
-		sql.append("                          ) \n");
-		sql.append(" SELECT nextval('seq_c_bpartner_padron_bsas'),     \n");
-		sql.append(" to_timestamp(FECHA_PUBLICACION, 'DDMMYYYY')     , \n");
-		sql.append(" to_timestamp(FECHA_DESDE, 'DDMMYYYY')           , \n");
-		sql.append(" to_timestamp(FECHA_HASTA, 'DDMMYYYY')           , \n");
-		sql.append(" CUIT                                            , \n");
-		sql.append(" TIPO_CONTR_INSC                                 , \n");
-		sql.append(" ALTA_BAJA                                       , \n");
-		sql.append(" CBIO_ALICUOTA                                   , \n");
-		sql.append(" to_number((CASE regimen WHEN 'P' THEN alicuota ELSE '0,00' END), '9999999D99')             , \n");
-		sql.append(" to_number((CASE regimen WHEN 'R' THEN alicuota ELSE '0,00' END), '9999999D99')              , \n");
-		sql.append(" (CASE regimen WHEN 'R' THEN NRO_GRUPO ELSE 0 END), \n");
-		sql.append(" (CASE regimen WHEN 'P' THEN NRO_GRUPO ELSE 0 END), \n");
-		sql.append(" " + ad_Client_ID + "                            , \n");
-		sql.append(" " + p_AD_Org_ID + "                             , \n");
-		sql.append(" 'Y'                                             , \n");
-		sql.append(" CURRENT_DATE                                    , \n");
-		sql.append(" CURRENT_DATE                                    , \n");
-		sql.append(" " + ad_User_ID + "                              , \n");
-		sql.append(" " + ad_User_ID + "                              , \n");
-		sql.append(" '" + p_PadronType + "'                                  ");
-		sql.append(" FROM   i_padron_sujeto_aux_new                    \n ");
-		/* 
-		 * Se debe permitir insertar registros con CUITs iguales
-		sql.append("WHERE cuit NOT IN \n");
-		sql.append("(SELECT CUIT FROM c_bpartner_padron_bsas) ");
-		*/		
-		regInserted = DB.executeUpdate(sql.toString());
-		log.log (Level.SEVERE,"doIt - Registros Pasados al sistema =" + regInserted);
+	protected void actualizarPadron(){
+		long time;	
+		String trxName = "";
+		CallableStatement cs = null;
+
+		int qty = contarRegistrosAux();
+		
+		String sql = "{ call update_bpartner_padron_bsas(?, ?, ?, ?, ?, ?) }";
+
+        for(int offset = 0; offset < qty; offset += p_ChunkSize)
+        {
+
+			try {
+				time = System.currentTimeMillis();				
+				trxName = Trx.createTrxName();
+				Trx.getTrx(trxName).start();
+				
+				cs = DB.prepareCall(sql, ResultSet.CONCUR_UPDATABLE, true, trxName);				
+
+				int i = 0;
+				DB.setParameter(cs, ++i, p_AD_Org_ID);
+		        DB.setParameter(cs, ++i, ad_Client_ID);
+		        DB.setParameter(cs, ++i, ad_User_ID);
+		        DB.setParameter(cs, ++i, p_PadronType);
+		        DB.setParameter(cs, ++i, offset);
+		        DB.setParameter(cs, ++i, p_ChunkSize);
+		        
+		        cs.executeUpdate();
+
+				Trx.getTrx(trxName).commit();
+				cs.close();				
+				
+				time = System.currentTimeMillis() - time;
+				log.info("Se procesaron " + p_ChunkSize + " registros en " + time + " ms");
+			}
+			catch (Exception e) {
+				Trx.getTrx(trxName).rollback();
+				log.log( Level.SEVERE,"actualizarPadron: " + e );				
+			}
+			finally {
+				Trx.getTrx(trxName).close();
+			}            
+        }
+        		
+		log.log (Level.SEVERE,"doIt - Registros Pasados al sistema =" + qty);
+	}
+	
+	protected int contarRegistrosAux(){
+		int c = 0;
+		String sql = "select coalesce(count(*),0) from i_padron_sujeto_aux_new";
+		PreparedStatement ps = DB.prepareStatement(sql.toString());
+		
+		try {
+			ResultSet rs = ps.executeQuery();
+			if(rs.next())
+				c = rs.getInt(1);
+			rs.close();
+			ps.close();
+		} catch (Exception e) {
+			log.log( Level.SEVERE,"contarRegistrosAux: " + e );			
+		}
+					
+		return c;
 	}
 
 }
