@@ -2362,12 +2362,11 @@ public final class DB {
 	private static boolean needsUpdatableCursor(String sql){
 		// TODO: Oracle compatibility
 
-		// Quick test just to avoid converting the whole string to lower case
-		if(sql.startsWith("SELECT nextval("))
-			return true;
+		String test = "select nextval(";
+		if(sql.length() <= test.length())
+			return false;
 
-		// Full test
-		return sql.toLowerCase().startsWith("select nextval(");
+		return sql.substring(0, test.length()).equalsIgnoreCase(test);
 	}
 
 }    // DB
