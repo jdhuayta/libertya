@@ -752,15 +752,15 @@ public final class DB {
      */
 
     public static CPreparedStatement prepareStatement( String RO_SQL,String trxName ) {
-        return prepareStatement( RO_SQL,ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY,trxName,false );
+        return prepareStatement( RO_SQL,ResultSet.TYPE_FORWARD_ONLY, needsUpdatableCursor(RO_SQL) ? ResultSet.CONCUR_UPDATABLE : ResultSet.CONCUR_READ_ONLY,trxName,false );
     }    // prepareStatement
     
     
     /** Sobrecarga con parametro noConvert para evitar intentos de conversion de sentencias */
     public static CPreparedStatement prepareStatement( String RO_SQL,String trxName, boolean noConvert) {
-    	return prepareStatement( RO_SQL,ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY,trxName, noConvert );
+    	return prepareStatement( RO_SQL,ResultSet.TYPE_FORWARD_ONLY, needsUpdatableCursor(RO_SQL) ? ResultSet.CONCUR_UPDATABLE : ResultSet.CONCUR_READ_ONLY,trxName, noConvert );
     }
-
+    
     /**
      * Descripción de Método
      *
@@ -2353,6 +2353,23 @@ public final class DB {
 	public static Timestamp getDBTimestamp(String trxName){
 		return getSQLValueTimestamp(trxName, "SELECT now()");
 	}
+	
+	/**
+	 * PostgreSQL 9 onwards needs a RW connection in order to execute nextval() calls
+	 * @param sql
+	 * @return if a RW connection is needed
+	 */
+	private static boolean needsUpdatableCursor(String sql){
+		// TODO: Oracle compatibility
+
+		// Quick test just to avoid converting the whole string to lower case
+		if(sql.startsWith("SELECT nextval("))
+			return true;
+
+		// Full test
+		return sql.toLowerCase().startsWith("select nextval(");
+	}
+
 }    // DB
 
 
