@@ -1341,9 +1341,7 @@ public class MCashLine extends X_C_CashLine implements DocAction {
 
 			// Guardar la línea de caja para contener los datos reales a find e
 			// actualizar el crédito
-			if(!save()){
-				log.severe(CLogger.retrieveErrorAsString());
-			}
+			save();
 
 			// Actualiza el crédito de la entidad comercial
 			if (!Util.isEmpty(getC_BPartner_ID(), true) && isUpdateBPBalance()

@@ -141,9 +141,6 @@ public class PluginXMLUpdater {
 				if (shouldSkipCurrentChangeGroup(changeGroup))
 					continue;
 				
-				// Validar si ciertas columnas deben omitirse 
-				checkForColumnsToSkip(changeGroup);
-				
 				sentence = "";
 				currentChangeGroup = changeGroup;
 				PluginUtils.appendStatus("[" + iter + "]" + animation[iter++%animation.length], true, false, false, false);
@@ -184,13 +181,7 @@ public class PluginXMLUpdater {
 	{
 		return false;
 	}
-
-	/* En esta clase actualmente se deben procesar todas las columnas.
-	 * Se deja la posibilidad de redefinicion para las subclases */
-	protected void checkForColumnsToSkip(ChangeGroup changeGroup)
-	{
-		return;
-	}
+	
 	
 	/**
 	 * Envia al log correspondiente la sentencia a ejecutar
@@ -238,10 +229,10 @@ public class PluginXMLUpdater {
 		/* Creación del sql para el insert */
 		StringBuffer sql = new StringBuffer("");
 
-		/* Si el registro ya existe, no insertarlo nuevamente (subclases implemenarán segun sea necesario) */
+		/* Si el registro ya existe, no insertarlo nuevamente */
 		if ( recordExists(changeGroup) ) {
-			StringBuffer result = handleRecordExistsOnInsert(changeGroup);
-			return (result != null ? result : sql);
+			handleRecordExistsOnInsert(changeGroup);
+			return sql;
 		}
 		
 		/* Obtener la columna clave de la tabla */
@@ -276,10 +267,10 @@ public class PluginXMLUpdater {
 		/* Creación del sql para el update */
 		StringBuffer sql = new StringBuffer("");
 		
-		/* Si el regitro no existe, presentar el error correspondiente (subclases implemenarán segun sea necesario) */
+		/* Si el regitro no existe, presentar el error correspondiente  */
 		if ( !recordExists(changeGroup) ) {
-			StringBuffer result = handleRecordNotExistsOnModify(changeGroup);
-			return (result != null ? result : sql);
+			handleRecordNotExistsOnModify(changeGroup);
+			return sql;
 		}
 		
 		/* Obtener la columna clave de la tabla */
@@ -314,10 +305,10 @@ public class PluginXMLUpdater {
 		/* Creación del sql para el delete */
 		StringBuffer sql = new StringBuffer("");		
 		
-		/* Si el registro no existe, no intentar eliminarlo (subclases implemenarán segun sea necesario) */
+		/* Si el registro no existe, no intentar eliminarlo */
 		if ( !recordExists(changeGroup) ) {
-			StringBuffer result = handleRecordNotExistsOnDelete(changeGroup);
-			return (result != null ? result : sql);
+			handleRecordNotExistsOnDelete(changeGroup);
+			return sql;
 		}
 
 		/* Definir sentencia y devolver la misma */
@@ -334,7 +325,7 @@ public class PluginXMLUpdater {
 	 * 	En caso de existir, ejecutará una sentencia de actualización.  
 	 * 	En caso de no existir, ejecutará una sentencia de inserción.
 	 */
-	protected StringBuffer processInsertModify(ChangeGroup changeGroup)  throws Exception
+	private StringBuffer processInsertModify(ChangeGroup changeGroup)  throws Exception
 	{
 		if (recordExists(changeGroup))
 			return processModify(changeGroup);
@@ -342,21 +333,18 @@ public class PluginXMLUpdater {
 	}
 	
 	/** Eleva una excepcion a fin de notificar que el intento de inserción no fue llevado a cabo dado que el registro en cuestion ya existía */
-	protected StringBuffer handleRecordExistsOnInsert(ChangeGroup changeGroup) throws Exception	{
+	protected void handleRecordExistsOnInsert(ChangeGroup changeGroup) throws Exception	{
 		raiseException(WARNING_UID_ALREADY_EXISTS + " Referencia: (" + getUniversalReference(changeGroup) + ") en tabla: " + changeGroup.getTableName() );
-		return null;
 	}
 
 	/** Eleva una excepcion a fin de notificar que el intento de modificación no fue llevado a cabo dado que el registro en cuestion no existía */
-	protected StringBuffer handleRecordNotExistsOnModify(ChangeGroup changeGroup) throws Exception	{
+	protected void handleRecordNotExistsOnModify(ChangeGroup changeGroup) throws Exception	{
 		raiseException(WARNING_UID_NOT_EXISTS_UPDATE + " Referencia: " + getUniversalReference(changeGroup) + ". Tabla:" + changeGroup.getTableName());
-		return null;
 	}
 	
 	/** Eleva una excepcion a fin de notificar que el intento de eliminaciòn no fue llevado a cabo dado que el registro en cuestion no existía */
-	protected StringBuffer handleRecordNotExistsOnDelete(ChangeGroup changeGroup) throws Exception	{
+	protected void handleRecordNotExistsOnDelete(ChangeGroup changeGroup) throws Exception	{
 		raiseException(WARNING_UID_NOT_EXISTS_DELETE + " Referencia: (" + getUniversalReference(changeGroup) + ") .Tabla: " + changeGroup.getTableName() );
-		return null;
 	}
 	
 	/**

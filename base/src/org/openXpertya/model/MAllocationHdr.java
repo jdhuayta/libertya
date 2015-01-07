@@ -279,7 +279,7 @@ public class MAllocationHdr extends X_C_AllocationHdr implements DocAction {
 
             // setDocumentNo (null);
 
-            setDateTrx( Env.getDate());
+            setDateTrx( new Timestamp( System.currentTimeMillis()));
             setDateAcct( getDateTrx());
             setDocAction( DOCACTION_Complete );    // CO
             setDocStatus( DOCSTATUS_Drafted );     // DR
@@ -1256,10 +1256,7 @@ public class MAllocationHdr extends X_C_AllocationHdr implements DocAction {
 				&& status) {
 			// Guardar el payment con el nuevo estado a fin de recalcular
 			// correctamente el crédito de la entidad comercial
-			if(!save()){
-				log.severe(CLogger.retrieveErrorAsString());
-			}
-			
+			this.save();
 			if (!Util.isEmpty(getC_BPartner_ID(), true) && isUpdateBPBalance()) {
 				MBPartner bp = new MBPartner(getCtx(), getC_BPartner_ID(), get_TrxName());
 				// Obtengo el manager actual

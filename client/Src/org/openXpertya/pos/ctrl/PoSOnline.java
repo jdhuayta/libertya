@@ -35,7 +35,6 @@ import org.openXpertya.model.MCashLine;
 import org.openXpertya.model.MCategoriaIva;
 import org.openXpertya.model.MCheckCuitControl;
 import org.openXpertya.model.MConversionRate;
-import org.openXpertya.model.MCreditException;
 import org.openXpertya.model.MDocType;
 import org.openXpertya.model.MEntidadFinanciera;
 import org.openXpertya.model.MEntidadFinancieraPlan;
@@ -574,7 +573,7 @@ public class PoSOnline extends PoSConnectionState {
 	private void clearState(Order order) {
 		
 		ctx = Env.getCtx();
-		invoiceDate = Env.getDate();
+		invoiceDate = new Timestamp(System.currentTimeMillis());
 		
 //		if (trx != null) {
 //			try {
@@ -1080,6 +1079,8 @@ public class PoSOnline extends PoSConnectionState {
 			MCheckCuitControl cuitControl;
 			BigDecimal balance;
 			for (String cuit : cuits.keySet()) {
+				// Obtener el control para el cuit y organización *
+				cuitControl = createCheckCUITControl(0, cuit);
 				// Obtener el control para el cuit y organización actual
 				cuitControl = createCheckCUITControl(Env.getAD_Org_ID(getCtx()), cuit);				
 				// Verificar si está activo y no supera el límite impuesto en el
@@ -2572,7 +2573,7 @@ public class PoSOnline extends PoSConnectionState {
 
 	@Override
 	public Tax getProductTax(int productId, int locationID) {
-		Timestamp now = Env.getDate();
+		Timestamp now = new Timestamp(System.currentTimeMillis());
 		BigDecimal taxRate;
 		
 		// Se obtiene el Tax del producto.
@@ -2783,7 +2784,7 @@ public class PoSOnline extends PoSConnectionState {
         }
         // Today
         if( priceDate == null ) {
-            priceDate = Env.getDate();
+            priceDate = new Timestamp( System.currentTimeMillis());
         }
         int versionID = 0;
         PriceListVersion version = null;

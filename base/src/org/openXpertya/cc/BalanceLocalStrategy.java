@@ -324,7 +324,7 @@ public class BalanceLocalStrategy extends CurrentAccountBalanceStrategy {
 		BigDecimal bpLimit = bp.getSO_CreditLimit(); 
 		// Obtengo la excepción de límite de crédito si es que existe
 		MCreditException creditLimitException = getCreditException(ctx, org,
-				bp, new Date(Env.getDate().getTime()),
+				bp, new Date(System.currentTimeMillis()),
 				MCreditException.EXCEPTIONTYPE_CreditLimit, trxName);
 		// Si existe una excepción de límite de crédito, al límite standard
 		// global le sumo el monto de excepción configurado 

@@ -1,10 +1,8 @@
 package org.openXpertya.process.release;
 
 import org.openXpertya.JasperReport.MJasperReport;
-import org.openXpertya.model.MAttachment;
 import org.openXpertya.model.MProcess;
 import org.openXpertya.process.PluginPostInstallProcess;
-import org.openXpertya.util.DB;
 import org.openXpertya.utils.JarHelper;
 
 public class PostInstallUpgradeFrom1402 extends PluginPostInstallProcess {
@@ -129,11 +127,6 @@ public class PostInstallUpgradeFrom1402 extends PluginPostInstallProcess {
 	/** UID del Informe de Declaración de Valores por Organización */
 	protected final static String DECLARACION_VALORES_X_ORG_JASPER_REPORT_UID = "CORE-AD_JasperReport-1010105";
 	protected final static String DECLARACION_VALORES_X_ORG_JASPER_REPORT_FILENAME = "DeclaracionDeValoresXOrg.jasper";
-	
-	/** UID del Listado de Cupones de Tarjeta */
-	protected final static String LISTADO_DE_CUPONES_DE_TARJETA_REPORT_UID = "CORE-AD_Process-1010405";
-	protected final static String LISTADO_DE_CUPONES_DE_TARJETA_REPORT_FILENAME = "ListadoCuponesTarjeta.jrxml";
-
 	
 	@Override
 	protected String doIt() throws Exception {
@@ -455,35 +448,6 @@ public class PostInstallUpgradeFrom1402 extends PluginPostInstallProcess {
 									jarFileURL,
 									getBinaryFileURL(DECLARACION_VALORES_X_ORG_JASPER_REPORT_FILENAME)));
 		
-		// Historia de Artículos
-		String getID_HistoriaDeArticulos_FromUID = " SELECT AD_Process_ID FROM AD_Process WHERE AD_ComponentObjectUID = ?";
-		int historiaDeArticulos_Process_Record_ID = DB.getSQLValue(get_TrxName(), getID_HistoriaDeArticulos_FromUID, HISTORIA_DE_ARTICULOS_REPORT_UID);
-		
-		String getAttachment_HistoriaDeArticulos = "SELECT AD_Attachment_ID FROM AD_Attachment WHERE AD_Table_ID = ? AND Record_ID = ?";
-		int historiaDeArticulos_Attachment_Record_ID = DB.getSQLValue(get_TrxName(), getAttachment_HistoriaDeArticulos, MProcess.Table_ID, historiaDeArticulos_Process_Record_ID);
-		
-		if(historiaDeArticulos_Attachment_Record_ID > 0){
-			DB.executeUpdate("DELETE FROM AD_Attachment WHERE AD_Table_ID = "+ MProcess.Table_ID +" AND Record_ID = "+ historiaDeArticulos_Process_Record_ID, get_TrxName());
-		}
-		MAttachment att_HistoriaDeArticulos  = new MAttachment(getCtx(), 0, get_TrxName()); 
-		att_HistoriaDeArticulos.setAD_Table_ID(MProcess.Table_ID);
-		att_HistoriaDeArticulos.setRecord_ID(historiaDeArticulos_Process_Record_ID);
-		att_HistoriaDeArticulos.addEntry("HistoriaDeArticulos.jrxml", JarHelper.readBinaryFromJar(jarFileURL,getBinaryFileURL(HISTORIA_DE_ARTICULOS_REPORT_FILENAME)));
-		if(!att_HistoriaDeArticulos.save()){
-			throw new Exception ("Error al guardar jrxml ");
-		}
-		
-		// Listado de Cupones de Tarjeta
-				MProcess.addAttachment(
-						get_TrxName(),
-						getCtx(),
-						LISTADO_DE_CUPONES_DE_TARJETA_REPORT_UID,
-						LISTADO_DE_CUPONES_DE_TARJETA_REPORT_FILENAME,
-						JarHelper
-								.readBinaryFromJar(
-										jarFileURL,
-										getBinaryFileURL(LISTADO_DE_CUPONES_DE_TARJETA_REPORT_FILENAME)));
-				
 		return " ";
 	}
 

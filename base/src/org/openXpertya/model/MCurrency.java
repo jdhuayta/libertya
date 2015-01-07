@@ -44,10 +44,6 @@ public class MCurrency extends X_C_Currency {
     /** Store System Currencies */
     private static CCache	s_currencies	= new CCache("C_Currency", 50);
 
-    public MCurrency(Properties ctx, ResultSet rs, String trxName) {
-    	super(ctx, rs, trxName);
-    }
-    
     /**
      *      Currency Constructor
      *      @param ctx context

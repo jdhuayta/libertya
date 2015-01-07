@@ -29,7 +29,6 @@ import org.openXpertya.util.CLogger;
 import org.openXpertya.util.DB;
 import org.openXpertya.util.Env;
 import org.openXpertya.util.MProductCache;
-import org.openXpertya.util.Msg;
 import org.openXpertya.util.Util;
 
 /**
@@ -82,7 +81,7 @@ public class MInvoiceLine extends X_C_InvoiceLine {
         PreparedStatement pstmt    = null;
 
         try {
-            pstmt = DB.prepareStatement( sql,sLine.get_TrxName());
+            pstmt = DB.prepareStatement( sql,sLine.get_TableName());
             pstmt.setInt( 1,sLine.getM_InOutLine_ID());
 
             ResultSet rs = pstmt.executeQuery();
@@ -987,14 +986,6 @@ public class MInvoiceLine extends X_C_InvoiceLine {
         // Recupero el impuesto aplicado a la línea
         setTaxAmt();
         setLineTotalAmt(getLineNetAmt().add(getTaxAmt()));
-        
-    	// Controlar cantidades por unidad de medida
-        if(!MUOM.isAllowedQty(getCtx(), getC_UOM_ID(), getQtyEntered(), get_TrxName())){
-			log.saveError(Msg.getMsg(getCtx(), "UOMNotAllowedQty",
-					new Object[] { MUOM.get(getCtx(), getC_UOM_ID()).getName(),
-							getQtyEntered() }), "");
-			return false;
-        }
         
         // Setear el proveedor del artículo actual y el precio de costo
         if(!Util.isEmpty(getM_Product_ID(), true)){    		

@@ -79,7 +79,6 @@ import org.openXpertya.images.ImageFactory;
 import org.openXpertya.minigrid.MiniTable;
 import org.openXpertya.model.CalloutInvoiceExt;
 import org.openXpertya.model.FiscalDocumentPrint;
-import org.openXpertya.model.MCreditException;
 import org.openXpertya.model.MPOSPaymentMedium;
 import org.openXpertya.pos.ctrl.AddPOSPaymentValidations;
 import org.openXpertya.pos.ctrl.PoSConfig;
@@ -159,7 +158,7 @@ public class PoSMainForm extends CPanel implements FormPanel, ASyncProcess, Disp
 	// --------------------------------------------------
 	
 
-	private final Date TODAY = new Date(Env.getDate().getTime());
+	private final Date TODAY = new Date(System.currentTimeMillis());
 	private final String STATUS_DB_SEPARATOR = " | ";
 
 	private String MSG_NO_POS_CONFIG = null;
@@ -5922,11 +5921,6 @@ public class PoSMainForm extends CPanel implements FormPanel, ASyncProcess, Disp
 		// quedará del crédito seleccionado
 		if(paymentMedium.isCreditNote()){
 			updateCreditNoteBalance();
-		}
-		// Si estamos pagando con efectivo entonces se debe refrescar lo de
-		// efectivo
-		if(paymentMedium.isCash()){
-			updateConvertedAmount();
 		}
     }
     

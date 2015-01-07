@@ -220,9 +220,9 @@ public class MOrder extends X_C_Order implements DocAction {
             super.setProcessed( false );
             setProcessing( false );
             setPosted( false );
-            setDateAcct(Env.getDate());
-            setDatePromised(Env.getDate());
-            setDateOrdered(Env.getDate());
+            setDateAcct( new Timestamp( System.currentTimeMillis()));
+            setDatePromised( new Timestamp( System.currentTimeMillis()));
+            setDateOrdered( new Timestamp( System.currentTimeMillis()));
             setFreightAmt( Env.ZERO );
             setChargeAmt( Env.ZERO );
             setTotalLines( Env.ZERO );
@@ -4875,7 +4875,6 @@ public class MOrder extends X_C_Order implements DocAction {
 			newOrderLine.setRef_OrderLine_ID(orderLine.getID());
 			newOrderLine.setProcessed(false);
 			newOrderLine.setM_Warehouse_ID(newOrder.getM_Warehouse_ID());
-			newOrderLine.setAD_Org_ID(newOrder.getAD_Org_ID());
 			if(!newOrderLine.save()){
 				throw new Exception(CLogger.retrieveErrorAsString());
 			}

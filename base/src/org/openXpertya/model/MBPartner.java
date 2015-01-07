@@ -412,7 +412,6 @@ public class MBPartner extends X_C_BPartner {
         setIsCustomer(impBP.isCustomer());
         setIsVendor(impBP.isVendor());
         setIsEmployee(impBP.isEmployee());
-        setIsMultiCUIT(impBP.isMultiCUIT());
         
         // Estado de crédito de cliente
         if (impBP.isCustomer()) {
@@ -1052,14 +1051,13 @@ public class MBPartner extends X_C_BPartner {
     				"        createdby, updated, updatedby, c_retencionschema_id, c_bpartner_id, " +
     				"       description, taxid " +
     				" FROM c_bpartner_retencion " +
-    				" WHERE isactive = 'Y' and c_bpartner_id = ? and (ad_org_id = ? or ad_org_id = '0')";
+    				" WHERE isactive = 'Y' and c_bpartner_id = ? ";
     	
     	PreparedStatement pstmt = null;
 
         try {
             pstmt = DB.prepareStatement( sql );
             pstmt.setInt( 1,getC_BPartner_ID());
-            pstmt.setInt(2, Env.getAD_Org_ID(getCtx()));
 
             ResultSet rs = pstmt.executeQuery();
 
@@ -1233,14 +1231,13 @@ public class MBPartner extends X_C_BPartner {
 					return false;
 				}
 				// CUIT Repetido siempre que la configuración de la compañía
-				String whereClauseCUIT = newRecord ? "isactive = 'Y' AND trim(translate(taxid,'-','')) = trim(translate(?,'-','')) AND ad_client_id = "
+				String whereClauseCUIT = newRecord ? "taxid = ? AND ad_client_id = "
 						+ getAD_Client_ID()
-						: "isactive = 'Y' AND trim(translate(taxid,'-','')) = trim(translate(?,'-','')) AND ad_client_id = " + getAD_Client_ID()
+						: "taxid = ? AND ad_client_id = " + getAD_Client_ID()
 								+ " AND c_bpartner_id <> " + getID();
 				MClientInfo clientInfo = MClientInfo.get(getCtx(), getAD_Client_ID());
 				if (!Util.isEmpty(cuit, true)
 						&& clientInfo.isUniqueCuit()
-						&& !isMultiCUIT()
 						&& PO.existRecordFor(getCtx(), X_C_BPartner.Table_Name,
 								whereClauseCUIT, new Object[] { getTaxID() },
 								get_TrxName())) {

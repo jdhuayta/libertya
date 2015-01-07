@@ -205,7 +205,7 @@ public class CurrentAccountReport extends SvrProcess {
 						+ p_AccountType
 						+ "', '"
 						+ p_DateTrx_From + "', NULL"
-						+ ", "
+						+ "', "
 						+ "'"+(isOnlyCurrentAccountDocuments()?"Y":"N")+"'"
 						+ ");");
 			}
@@ -344,14 +344,14 @@ public class CurrentAccountReport extends SvrProcess {
 				.append(" SELECT COALESCE(SUM(t.Credit),0.0) AS Credit, COALESCE(SUM(t.Debit),0.0) AS Debit ");
 		sqlBalance.append(" FROM ( ");
 		sqlBalance.append(getCurrentAccountQuery().getAllDocumentsQuery())
-				.append(" AND d.DateAcct::date < ?::date ");
+				.append(" AND d.DateTrx < ? ");
 		sqlBalance.append(" ) t");
 
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
 
 		try {
-			pstmt = DB.prepareStatement(sqlBalance.toString(), get_TrxName(), true);
+			pstmt = DB.prepareStatement(sqlBalance.toString(), get_TrxName());
 			// Parámetros de sqlDoc
 			int i = 1;
 			pstmt.setInt(i++, debit_signo_issotrx);

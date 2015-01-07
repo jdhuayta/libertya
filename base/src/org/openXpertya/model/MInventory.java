@@ -96,11 +96,11 @@ public class MInventory extends X_M_Inventory implements DocAction {
             // setName (null);
             // setM_Warehouse_ID (0);              //      FK
 
-            setMovementDate( Env.getDate());
+            setMovementDate( new Timestamp( System.currentTimeMillis()));
             setDocAction( DOCACTION_Complete );                              // CO
             setDocStatus( DOCSTATUS_Drafted );                               // DR
             setIsApproved( false );
-            setMovementDate( Env.getDate());    // @#Date@
+            setMovementDate( new Timestamp( System.currentTimeMillis()));    // @#Date@
             setPosted( false );
             setProcessed( false );
             setInventoryKind(INVENTORYKIND_PhysicalInventory);

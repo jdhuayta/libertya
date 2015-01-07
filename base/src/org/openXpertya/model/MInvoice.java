@@ -135,12 +135,6 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 	 */
 	private boolean skipManualGeneralDiscountValidation = false;
 
-	/***
-	 * Boolean que determina si es posible setear la lista de precio del pedido
-	 * al setearlo
-	 */
-	private boolean allowSetOrderPriceList = true;
-	
 	/**
 	 * Descripción de Método
 	 * 
@@ -800,8 +794,8 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 			//
 
 			setPaymentRule(PAYMENTRULE_OnCredit); // Payment Terms
-			setDateInvoiced(Env.getDate());
-			setDateAcct(Env.getDate());
+			setDateInvoiced(new Timestamp(System.currentTimeMillis()));
+			setDateAcct(new Timestamp(System.currentTimeMillis()));
 
 			//
 
@@ -1154,9 +1148,7 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 		// Preserva la moneda ya que al cambiar la tarifa cambia la moneda
 		// tambien
 		int currentCurrencyID = getC_Currency_ID();
-		if(isAllowSetOrderPriceList()){
-			setM_PriceList_ID(order.getM_PriceList_ID());
-		}
+		setM_PriceList_ID(order.getM_PriceList_ID());
 		setC_Currency_ID(currentCurrencyID);
 
 		setIsTaxIncluded(order.isTaxIncluded());
@@ -3460,9 +3452,7 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 
 			// Guardar la factura con el nuevo estado a fin de recalcular
 			// correctamente el credito disponible
-			if(!save()){
-				log.severe(CLogger.retrieveErrorAsString());
-			}
+			this.save();
 
 			// Si es pedido de ventas y se paga a crédito, setear el crédito
 			// recalculado
@@ -3686,12 +3676,8 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 						orderLine.setQtyInvoiced(orderLine.getQtyInvoiced()
 								.add(qtyInvoiced));
 						orderLine.setControlStock(false);
-						orderLine.setUpdatePriceInSave(false);
-						if(!isAllowSetOrderPriceList()){
-							orderLine.m_M_PriceList_ID = getM_PriceList_ID();
-						}
 						if (!orderLine.save()) {
-							m_processMsg = CLogger.retrieveErrorAsString();
+							m_processMsg = "Could not update Order Line";
 							return DocAction.STATUS_Invalid;
 						}
 					}
@@ -3704,7 +3690,7 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 						MMatchPO po = new MMatchPO(line, getDateInvoiced(),
 								matchQty);
 						if (!po.save(get_TrxName())) {
-							m_processMsg = CLogger.retrieveErrorAsString();
+							m_processMsg = "Could not create PO Matching";
 							return DocAction.STATUS_Invalid;
 						} else {
 							matchPO++;
@@ -3721,7 +3707,7 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 							matchQty);
 
 					if (!inv.save(get_TrxName())) {
-						m_processMsg = CLogger.retrieveErrorAsString();
+						m_processMsg = "Could not create Invoice Matching";
 
 						return DocAction.STATUS_Invalid;
 					} else {
@@ -3829,7 +3815,7 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 					+ getDocumentNo());
 
 			if (!user.save(get_TrxName())) {
-				m_processMsg = CLogger.retrieveErrorAsString();
+				m_processMsg = "Could not update Business Partner User";
 
 				return DocAction.STATUS_Invalid;
 			}
@@ -3863,7 +3849,7 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 			project.setInvoicedAmt(newAmt);
 
 			if (!project.save(get_TrxName())) {
-				m_processMsg = CLogger.retrieveErrorAsString();
+				m_processMsg = "Could not update Project";
 
 				return DocAction.STATUS_Invalid;
 			}
@@ -5687,9 +5673,7 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 
 	public void calculatePercepciones() throws Exception {
 		MDocType docType = MDocType.get(getCtx(), getC_DocTypeTarget_ID());
-		if (docType.isFiscalDocument()
-				&& MOrgPercepcion.existsOrgPercepcion(getCtx(), getAD_Org_ID(),
-						get_TrxName())) {
+		if (docType.isFiscalDocument()) {
 			GeneratorPercepciones generator = new GeneratorPercepciones(
 					getCtx(), getDiscountableWrapper(), get_TrxName());
 			generator.calculatePercepciones(this);
@@ -5698,9 +5682,7 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 
 	public void recalculatePercepciones() throws Exception {
 		MDocType docType = MDocType.get(getCtx(), getC_DocTypeTarget_ID());
-		if (docType.isFiscalDocument()
-				&& MOrgPercepcion.existsOrgPercepcion(getCtx(), getAD_Org_ID(),
-						get_TrxName())) {
+		if (docType.isFiscalDocument()) {
 			GeneratorPercepciones generator = new GeneratorPercepciones(
 					getCtx(), getDiscountableWrapper(), get_TrxName());
 			generator.recalculatePercepciones(this);
@@ -6007,14 +5989,6 @@ public class MInvoice extends X_C_Invoice implements DocAction {
 	public void setSkipManualGeneralDiscountValidation(
 			boolean skipManualGeneralDiscountValidation) {
 		this.skipManualGeneralDiscountValidation = skipManualGeneralDiscountValidation;
-	}
-
-	public boolean isAllowSetOrderPriceList() {
-		return allowSetOrderPriceList;
-	}
-
-	public void setAllowSetOrderPriceList(boolean allowSetOrderPriceList) {
-		this.allowSetOrderPriceList = allowSetOrderPriceList;
 	}
 
 } // MInvoice

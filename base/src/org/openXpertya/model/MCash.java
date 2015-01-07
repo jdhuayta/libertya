@@ -331,7 +331,7 @@ public class MCash extends X_C_Cash implements DocAction {
 
             //
 
-            Timestamp today = Env.getDate();
+            Timestamp today = TimeUtil.getDay( System.currentTimeMillis());
 
             setStatementDate( today );                                                  // @#Date@
             setDateAcct( today );                                                       // @#Date@
@@ -986,9 +986,7 @@ public class MCash extends X_C_Cash implements DocAction {
     	if(processAction.equals(MCash.DOCACTION_Complete) && status){
 			// Guardar la caja con el nuevo estado a fin de recalcular
 			// correctamente el credito disponible
-    		if(!save()){
-				log.severe(CLogger.retrieveErrorAsString());
-			}
+    		this.save();
     		// Actualizar el crédito de las entidades comerciales    
     		Set<Integer> keys = getCcBPUpdates().keySet();
     		Map<PO, Object> aditionalResults;
