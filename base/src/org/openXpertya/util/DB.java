@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.sql.RowSet;
 import javax.swing.JOptionPane;
@@ -2355,19 +2357,23 @@ public final class DB {
 	}
 	
 	/**
-	 * PostgreSQL 9 onwards needs a RW connection in order to execute nextval() calls
+	 * Determines if an updatable cursor is needed in order to perform the query
 	 * @param sql
 	 * @return if a RW connection is needed
 	 */
 	private static boolean needsUpdatableCursor(String sql){
-		// TODO: Oracle compatibility
-
-		String test = "select nextval(";
-		if(sql.length() <= test.length())
-			return false;
-
-		return sql.substring(0, test.length()).equalsIgnoreCase(test);
+		if(isPostgreSQL()){
+			// PostgreSQL 9 onwards needs a RW connection in order to execute nextval() calls
+			if(needsUpdatableCursorPattern==null){
+				String test = "\\s*select\\s+.*nextval\\s*\\(.*";
+				needsUpdatableCursorPattern = Pattern.compile(test, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+			}
+			Matcher matcher = needsUpdatableCursorPattern.matcher(sql);
+			return matcher.matches();
+		}
+		return false;
 	}
+	private static Pattern needsUpdatableCursorPattern;
 
 }    // DB
 
