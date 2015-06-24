@@ -1,0 +1,1 @@
+Libertya es un software de Gestión Integral Administrativa, sin costos de licencias de uso totalmente libre, diseñado para su rápida implementación y puesta en marcha en cualquier tipo de empresa
